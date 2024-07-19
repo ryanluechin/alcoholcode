@@ -1,35 +1,33 @@
-#packafges
+#packages
 
 library(tidyr)
 library(dplyr)
-packlist <- c("haven", "modelsummary")
-install.packages(packlist[!(packlist %in% installed.packages()[, 1])])
 library(modelsummary)
+library(psych)
 
 # Drop specific states
-alcohol_data %>% filter(!(state %in% c(15, 54)))
+df <-alcohol_data %>% filter(!(state %in% c(15, 54)))
 
-# Arrange data for time series analysis
-alcohol_data %>% arrange(state, year)
+#arange data for time series analysis
+df <- df %>% arrange(state, year)
 
 #create new variables
-#beer_per_cap= 53458.07/ 219.8112= 243.2
 
-pop <- 219.8112
-
-df <- alcohol_data %>%
-  mutate(excise_price = 1 + beer_tax / 100, 
-         salestax_price = 1 + salestax / 100,
-         beer_per_cap = c_beer / pop,
-         ln_excise_price = log(excise_price),
-         ln_salestax_price = log(salestax_price),
-         ln_cons_beer = log(beer_per_cap),
-         ln_population = log(population),
-         ln_income = log(st_income / pop),
-         ln_unemp_rate = log(st_uemp_rate)
+df <- df %>%
+  mutate(
+    excise_price = 1 + beer_tax / 100,
+    salestax_price = 1 + salestax / 100,
+    beer_per_cap = c_beer / population,
+    
+    ln_excise_price = log(excise_price),
+    ln_salestax_price = log(salestax_price),
+    ln_cons_beer = log(beer_per_cap),
+    ln_population = log(population),
+    ln_income = log(st_income / population),
+    ln_unemp_rate = log(st_uemp_rate)
   ) %>%
-  arrange(st_name, year) %>%
-  group_by(st_name) %>%
+  arrange(state, year) %>%
+  group_by(state) %>%
   mutate(
     dln_population = ln_population - lag(ln_population),
     dln_income = ln_income - lag(ln_income),
@@ -39,6 +37,7 @@ df <- alcohol_data %>%
     dln_cons_beer = ln_cons_beer - lag(ln_cons_beer)
   ) %>%
   ungroup()
+
 
 #table 5 summary statistics chart generation
 
@@ -50,5 +49,13 @@ df <- df %>%
     d21 = da >= 21
   )
 
-summary(df %>% select(beer_per_cap, btax_dollars, beer_tax, salestax, d21, policy_change))
+summary_stats <- df %>%
+  select(beer_per_cap, btax_dollars, beer_tax, salestax, d21, policy_change) %>%
+  describe()
+
+print(summary_stats)
+
+
+
+  
    
