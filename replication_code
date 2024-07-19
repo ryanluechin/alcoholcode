@@ -4,6 +4,7 @@ library(tidyr)
 library(dplyr)
 library(modelsummary)
 library(psych)
+library(broom)
 
 # Drop specific states
 df <-alcohol_data %>% filter(!(state %in% c(15, 54)))
@@ -55,7 +56,25 @@ summary_stats <- df %>%
 
 print(summary_stats)
 
+# Table 6: Regression Analysis
+# Column 1: Baseline
 
+df <- df %>%
+  mutate(state = factor(state),
+         year = factor(year))
+
+formula <- as.formula("dln_cons_beer ~ dln_excise_price + dln_salestax_price + dln_population + year")
+baseline <- lm(formula, data = df)
+
+# Used Tidy function to filter out unwanted "year" coefficients in the summary stats for baseline
+tidy_baseline <- tidy(baseline)
+
+# Filtered out the "year" coefficients
+tidy_baseline_filtered <- tidy_baseline %>%
+  filter(!grepl("year", term))
+
+# Display the filtered results
+print(tidy_baseline_filtered)
 
   
    
