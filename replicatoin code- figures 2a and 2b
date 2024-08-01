@@ -1,0 +1,45 @@
+# Load necessary packages
+library(dplyr)
+
+# Example data processing (ensure data is correctly processed)
+data <- data %>%
+  mutate(
+    rnd_dlne = round(dln_excise_price * 1000) / 1000,
+    rnd_dlns = round(dln_salestax_price * 1000) / 1000
+  ) %>%
+  group_by(rnd_dlne) %>%
+  summarize(mean_dlnc_excise_price = mean(dln_cons_beer, na.rm = TRUE)) %>%
+  ungroup() %>%
+  group_by(rnd_dlns) %>%
+  summarize(mean_dlnc_s = mean(dln_cons_beer, na.rm = TRUE)) %>%
+  ungroup()
+
+# Filter data for Figure 2A
+data_2a <- subset(data, abs(rnd_dlne) < 0.02)
+
+# Create and save Figure 2A to PDF
+pdf("Figure_2a.pdf", width = 8, height = 6)
+plot(
+  data_2a$rnd_dlne, 
+  data_2a$mean_dlnc_excise_price,
+  xlab = "Change in Log(1+Beer Excise Rate)",
+  ylab = "Change in Log Per Capita Beer Consumption",
+  main = "Figure 2a: Per Capita Beer Consumption and State Beer Excise Taxes",
+  pch = 19, col = "blue"
+)
+dev.off()
+
+# Filter data for Figure 2B
+data_2b <- subset(data, abs(rnd_dlns) < 0.02)
+
+# Create and save Figure 2B to PDF
+pdf("Figure_2b.pdf", width = 8, height = 6)
+plot(
+  data_2b$rnd_dlns, 
+  data_2b$mean_dlnc_s,
+  xlab = "Change in Log(1+Sales Tax Rate)",
+  ylab = "Change in Log Per Capita Beer Consumption",
+  main = "Figure 2b: Per Capita Beer Consumption and State Sales Taxes",
+  pch = 19, col = "blue"
+)
+dev.off()
