@@ -1,51 +1,23 @@
-#packages
-
-packlist <- c("haven", "modelsummary")
+# Install and load necessary packages
+packlist <- c("haven", "lmtest", "sandwich", "wooldridge", "ivreg", "dplyr", "tidyr", "psych", "broom", "kableExtra")
 install.packages(packlist[!(packlist %in% installed.packages()[, 1])])
+lapply(packlist, library, character.only = TRUE)
 
-#renv::install("MASS@7.3-60")
-packlist <- c("wooldridge", "lmtest", "sandwich", "modelsummary")
-install.packages(packlist[!(packlist %in% installed.packages()[, 1])])
-
-library(wooldridge)
-library(lmtest)
-library(sandwich)
-library(modelsummary)
-#first inall packages
-
-#renv::install("MASS@7.3-60")
-
-packlist <- c("wooldridge", "modelsummary", "ivreg",  "lmtest", "sandwich")
-install.packages(packlist[!(packlist %in% installed.packages()[, 1])])
-
-library(ivreg)
-library(modelsummary)
-library(lmtest)
-library(sandwich)
-library(tidyr)
-library(dplyr)
-library(modelsummary)
-library(psych)
-library(broom)
-library(ivreg)
-library(modelsummary)
-library(lmtest)
-library(sandwich)
+# Load your data (ensure the `alcohol_data` data frame is properly loaded)
+# Example: alcohol_data <- read.csv("path_to_your_data.csv")
 
 # Drop specific states
-df <-alcohol_data %>% filter(!(state %in% c(15, 54)))
+df <- alcohol_data %>% filter(!(state %in% c(15, 54)))
 
-#arange data for time series analysis
+# Arrange data for time series analysis
 df <- df %>% arrange(state, year)
 
-#create new variables
-
+# Create new variables
 df <- df %>%
   mutate(
     excise_price = 1 + beer_tax / 100,
     salestax_price = 1 + salestax / 100,
     beer_per_cap = c_beer / population,
-    
     ln_excise_price = log(excise_price),
     ln_salestax_price = log(salestax_price),
     ln_cons_beer = log(beer_per_cap),
@@ -65,9 +37,7 @@ df <- df %>%
   ) %>%
   ungroup()
 
-
-#table 5 summary statistics chart generation
-
+# Table 5 summary statistics chart generation
 df <- df %>%
   mutate(beer_per_cap = beer_per_cap * 24 / 2.25) %>%
   mutate(
@@ -76,11 +46,27 @@ df <- df %>%
     d21 = da >= 21
   )
 
-summary_stats <- df %>%
-  select(beer_per_cap, btax_dollars, beer_tax, salestax, d21, policy_change) %>%
-  describe()
+# Use `dplyr` to summarise the data
+summary_df <- df %>%
+  summarise(
+    "Per capita beer consumption (cans)" = mean(beer_per_cap, na.rm = TRUE),
+    "State beer excise tax ($/case)" = mean(beer_tax, na.rm = TRUE),
+    "Sales tax (percent)" = mean(salestax, na.rm = TRUE),
+    "Drinking age is 21" = mean(d21, na.rm = TRUE),
+    "Any Alcohol Regulation Change" = mean(policy_change, na.rm = TRUE)
+  )
 
-print(summary_stats)
+# Use `psych` package for detailed descriptive statistics (optional)
+describe_df <- psych::describe(df %>% select(beer_per_cap, beer_tax, salestax, d21, policy_change))
+
+# Print summary using kableExtra for better presentation
+library(kableExtra)
+kable(summary_df, format = "html") %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"))
+
+# Print detailed descriptive statistics using kableExtra
+kable(describe_df, format = "html") %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"))
 
 
 # TABLE 6: COLUMN 1 BASELINE
