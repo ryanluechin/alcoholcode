@@ -69,6 +69,8 @@ kable(describe_df, format = "html") %>%
   kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"))
 
 
+
+
 # TABLE 6: COLUMN 1 BASELINE
 baseline_model <- lm(dln_cons_beer ~ dln_excise_price + dln_salestax_price + dln_population + factor(year), data = df)
 test <- coeftest(baseline_model, vcov = vcovHC(baseline_model))  # White's heteroskedasticity-robust standard errors
@@ -114,40 +116,52 @@ data_filtered_e <- data_filtered_e %>%
   mutate(mean_dln_cons_beer = mean_value)
 
 
-# Figure 2a
-fig2a <- ggplot(data_filtered_e, aes(x = dln_excise_price, y = dln_cons_beer)) +
-  geom_point(size = 1) +  # equivalent to msize(small)
-  geom_smooth(method = "lm", se = FALSE, color = "blue") +  # linear fit
-  labs(
-    title = "Figure 2a",
-    subtitle = "Per Capita Beer Consumption and State Beer Excise Taxes",
-    x = "Change in Log(1+Beer Excise Rate)",
-    y = "Change in Log Per Capita Beer Consumption"
-  ) +
-  scale_x_continuous(limits = c(-0.02, 0.02), breaks = seq(-0.02, 0.02, 0.005)) +
-  theme_minimal() +
-  theme(legend.position = "none")
+# FIGURES 2A AND 2B
 
-# Print Figure 2a
-print(fig2a)
+# Load necessary packages
+library(dplyr)
 
+# Example data processing (ensure data is correctly processed)
+data <- data %>%
+  mutate(
+    rnd_dlne = round(dln_excise_price * 1000) / 1000,
+    rnd_dlns = round(dln_salestax_price * 1000) / 1000
+  ) %>%
+  group_by(rnd_dlne) %>%
+  summarize(mean_dlnc_excise_price = mean(dln_cons_beer, na.rm = TRUE)) %>%
+  ungroup() %>%
+  group_by(rnd_dlns) %>%
+  summarize(mean_dlnc_s = mean(dln_cons_beer, na.rm = TRUE)) %>%
+  ungroup()
 
-# Figure 2b
-fig2b <- ggplot(data_filtered_s, aes(x = dln_salestax_price, y = dln_cons_beer)) +
-  geom_point(size = 1) +  # equivalent to msize(small)
-  geom_smooth(method = "lm", se = FALSE, color = "blue") +  # linear fit
-  labs(
-    title = "Figure 2b",
-    subtitle = "Per Capita Beer Consumption and State Sales Taxes",
-    x = "Change in Log(1+Sales Tax Rate)",
-    y = "Change in Log Per Capita Beer Consumption"
-  ) +
-  scale_x_continuous(limits = c(-0.02, 0.02), breaks = seq(-0.02, 0.02, 0.005)) +
-  theme_minimal() +
-  theme(legend.position = "none")
+# Filter data for Figure 2A
+data_2a <- subset(data, abs(rnd_dlne) < 0.02)
 
-# Print Figure 2b
-print(fig2b)
+# Create and display Figure 2A with regression line
+plot(
+  data_2a$rnd_dlne, 
+  data_2a$mean_dlnc_excise_price,
+  xlab = "Change in Log(1+Beer Excise Rate)",
+  ylab = "Change in Log Per Capita Beer Consumption",
+  main = "Figure 2a: Per Capita Beer Consumption and State Beer Excise Taxes",
+  pch = 19, col = "blue"
+)
+# Add a regression line
+abline(lm(mean_dlnc_excise_price ~ rnd_dlne, data = data_2a), col = "red")
 
+# Filter data for Figure 2B
+data_2b <- subset(data, abs(rnd_dlns) < 0.02)
+
+# Create and display Figure 2B with regression line
+plot(
+  data_2b$rnd_dlns, 
+  data_2b$mean_dlnc_s,
+  xlab = "Change in Log(1+Sales Tax Rate)",
+  ylab = "Change in Log Per Capita Beer Consumption",
+  main = "Figure 2b: Per Capita Beer Consumption and State Sales Taxes",
+  pch = 19, col = "blue"
+)
+# Add a regression line
+abline(lm(mean_dlnc_s ~ rnd_dlns, data = data_2b), col = "red")
 
 
